@@ -1007,6 +1007,22 @@ get_birthtime (int fd, char const *filename, struct stat const *st)
     }
 #endif
 
+  if (ts.tv_nsec < 0)
+    {
+      struct statx stx = { 0, };
+      if ((fd < 0
+           ? statx(AT_FDCWD, filename, AT_SYMLINK_NOFOLLOW, STATX_BTIME, &stx)
+           : statx(fd, "", AT_EMPTY_PATH, STATX_BTIME, &stx))
+          == 0)
+        {
+          if (stx.stx_btime.tv_sec != 0)
+            {
+              ts.tv_sec = stx.stx_btime.tv_sec;
+              ts.tv_nsec = stx.stx_btime.tv_nsec;
+            }
+        }
+    }
+
   return ts;
 }
 
